@@ -1,8 +1,19 @@
-# mangalore_buses
-You wanna go from A to B (IN MANGALORE) but can only afford buses and have 0 street skills? We have a solution for you.
+# Mangalore Buses
 
-V1 Idea:
-An app that takes a destination from [USER] within mangalore and finds the nearest buses that is going to [USER] destination.
+A small bus route finder for Mangalore, built with Astro. The app provides a location search, route map, and nearby bus details.
 
+## Development
 
+```sh
+npm install
+npm run dev
+```
 
+## Build
+
+```sh
+npm run build
+npm run preview
+```
+
+The image predictor demo is available at `/Image%20predictor%20mini/`.

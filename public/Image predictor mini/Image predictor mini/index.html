@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Local Bus Detection</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+        #container {
+            position: relative;
+            margin: auto;
+            width: fit-content;
+        }
+        #canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 10;
+        }
+        #image-upload, #status {
+            margin-top: 10px;
+        }
+        #image-preview {
+            max-width: 100%;
+            height: auto;
+            display: none; /* Initially hidden */
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Basic computer vision application</h1>
+    <p>Tensorflow.js</p>
+
+    <div id="status">Loading model... please wait.</div>
+
+    <input type="file" id="image-upload" accept="image/*">
+    
+    <div id="container">
+        <canvas id="canvas"></canvas>
+        <img id="image-preview" crossorigin="anonymous">
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+    <script src="coco-ssd.js"></script>
+
+    <script>
+        const statusElement = document.getElementById('status');
+        const imageUpload = document.getElementById('image-upload');
+        const imagePreview = document.getElementById('image-preview');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let model = null;
+
+        // Load the pre-trained coco-ssd model
+        async function loadModel() {
+            statusElement.innerText = 'Model is loading...';
+            model = await cocoSsd.load();
+            statusElement.innerText = 'Model loaded successfully! Upload an image to begin.';
+        }
+
+        // Run the detection on the uploaded image
+        async function detectImage() {
+            if (!model) {
+                statusElement.innerText = 'Model not yet loaded.';
+                return;
+            }
+
+            statusElement.innerText = 'Detecting objects...';
+            
+            // The `detect` method from the coco-ssd model takes an image element
+            const predictions = await model.detect(imagePreview);
+            console.log(predictions)
+            statusElement.innerText = `Detected ${predictions.length} objects.`;
+            
+            drawPredictions(predictions);
+        }
+
+        // Draw the predictions on the canvas
+        function drawPredictions(predictions) {
+            // Set canvas size to match the image
+            canvas.width = imagePreview.width;
+            canvas.height = imagePreview.height;
+            
+            // Clear any previous drawings
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            predictions.forEach(prediction => {
+                // Filter for a specific type of ball. The coco-ssd model detects
+                // "sports ball" among other objects.
+                if (prediction.score > 0.50) {
+                    const [x, y, width, height] = prediction.bbox;
+
+                    // Draw the bounding box
+                    ctx.strokeStyle = '#00FFFF'; // Cyan
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(x, y, width, height);
+
+                    // Draw the label
+                    ctx.fillStyle = '#00FFFF'; // Cyan
+                    ctx.font = '16px Arial';
+                    const text = `${prediction.class} (${Math.round(prediction.score * 100)}%)`;
+                    ctx.fillText(text, x, y > 10 ? y - 5 : 10);
+                }
+            });
+        }
+
+        // Event listener for image file selection
+        imageUpload.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) {
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                imagePreview.src = e.target.result;
+                imagePreview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // Once the image is loaded, trigger detection
+        imagePreview.onload = () => {
+            detectImage();
+        };
+
+        // Start by loading the model
+        loadModel();
+    </script>
+
+</body>
+</html>
